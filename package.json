@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "start": "node app.js",
+    "eslint": "./node_modules/.bin/grunt eslint --verbose",
+    "jenkins": "./node_modules/.bin/grunt jenkins --verbose",
     "test": "./node_modules/.bin/grunt test --verbose",
     "travis": "./node_modules/.bin/grunt travis --verbose",
     "fetchCoverage": "./node_modules/.bin/grunt exec:fetchCoverage --verbose"
@@ -73,3 +75,4 @@
     "supertest": "=3.0.0"
   }
 }
+
