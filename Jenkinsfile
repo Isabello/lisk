@@ -1,15 +1,6 @@
 pipeline {
    agent none
       stages {
-         
-         stage ('Disable Concurrency on Master') {
-            steps {
-               node('master'){
-                properties([disableConcurrentBuilds()])
-               }
-            }
-         }
-            
            stage ('Node Provisioning') { 
                 steps {
                   parallel(
