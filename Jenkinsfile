@@ -3,8 +3,8 @@ pipeline {
       stages {
 
            stage ('Node Provisioning') { 
-             lock(resource: 'Lisk-Core-Nodes',  inversePrecedence: true) {
                 steps {
+                 lock(resource: 'Lisk-Core-Nodes',  inversePrecedence: true) {
                   parallel(
                     "Build Node-01" : {
                       node('node-01'){
