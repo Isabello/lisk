@@ -1,11 +1,16 @@
 pipeline {
    agent none
       stages {
-
+         stage ('Disable Concurrency on Master') {
+            steps {
+               node('master'){
+                properties([disableConcurrentBuilds()])
+               }
+            }
+            
            stage ('Node Provisioning') { 
                 steps {
                   parallel(
-                    lock(resource: 'Lisk-Core-Nodes',  inversePrecedence: true) {
                     "Build Node-01" : {
                       node('node-01'){
                        sh '''#!/bin/bash
@@ -85,10 +90,9 @@ pipeline {
                              cp test/config.json test/genesisBlock.json .
                              BUILD_ID=dontKillMe ~/start_lisk.sh
                           '''
-                          }
-                      }
-                    }
-                   )
+                         }
+                     }
+                 )
              }
            }
            stage ('Parallel Tests') { 
