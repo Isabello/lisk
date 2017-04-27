@@ -315,30 +315,30 @@ pipeline {
                )
             }
          }
-         stage ('Node Cleanup') {     
+         stage ('Generate Coverage') {     
            steps {
              parallel(
-               "Cleanup Node-01" : {
+               "Coverage Node-01" : {
                  node('node-01'){
                    sh '''#!/bin/bash
+                     cd /home/lisk/jenkins/workspace/lisk
                    	npm run fetchCoverage
-                     pkill -f app.js -9 
                       '''
                      }
                    },
-                 "Cleanup Node-02" : {
+                 "Coverage Node-02" : {
                    node('node-02'){
                      sh '''#!/bin/bash
+                     cd /home/lisk/jenkins/workspace/lisk
                      npm run fetchCoverage
-                     pkill -f app.js -9 
                      '''
                      }
                  },
-                 "Cleanup Node-03" : {
+                 "Coverage Node-03" : {
                    node('node-03'){
                      sh '''#!/bin/bash
+                     cd /home/lisk/jenkins/workspace/lisk
                      npm run fetchCoverage
-                     pkill -f app.js -9 
                      '''
                  }
                }
@@ -361,6 +361,33 @@ pipeline {
                      '''
                }
             }
+        }
+        stage ('Node Cleanup') {     
+           steps {
+             parallel(
+               "Cleanup Node-01" : {
+                 node('node-01'){
+                   sh '''
+                     pkill -f app.js -9 
+                      '''
+                     }
+                   },
+                 "Cleanup Node-02" : {
+                   node('node-02'){
+                     sh '''
+                     pkill -f app.js -9 
+                     '''
+                     }
+                 },
+                 "Cleanup Node-03" : {
+                   node('node-03'){
+                     sh '''
+                     pkill -f app.js -9 
+                     '''
+                 }
+               }
+            )
+          }
         }
     }
 }
