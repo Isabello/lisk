@@ -315,6 +315,16 @@ pipeline {
                )
             }
          }
+         stage ('Gather Coverage') {
+            steps {
+               node('master'){
+                  sh '''rm -rf coverage || true
+                     mkdir coverage
+                     cd coverage
+                     scp lisk@node-01:/home/lisk/jenkins/workspace/lisk/test/.coverage-unit/coverage.json coverage-node-01.json
+               }
+            }
+         }
          stage ('Node Cleanup') {     
            steps {
              parallel(
