@@ -315,46 +315,51 @@ pipeline {
                )
             }
          }
-         stage ('Gather Coverage') {
-            steps {
-               node('master'){
-                  sh '''rm -rf coverage || true
-                     mkdir coverage
-                     cd coverage
-                     scp lisk@node-01:/home/lisk/jenkins/workspace/lisk/test/.coverage-unit/coverage.json coverage-node-01.json
-               }
-            }
-         }
          stage ('Node Cleanup') {     
            steps {
              parallel(
                "Cleanup Node-01" : {
                  node('node-01'){
                    sh '''#!/bin/bash
+                   	npm run fetchCoverage
                      pkill -f app.js -9 
-                      rm -rf /home/lisk/jenkins/workspace/lisk
                       '''
                      }
                    },
                  "Cleanup Node-02" : {
                    node('node-02'){
                      sh '''#!/bin/bash
+                     npm run fetchCoverage
                      pkill -f app.js -9 
-                     rm -rf /home/lisk/jenkins/workspace/lisk
                      '''
                      }
                  },
                  "Cleanup Node-03" : {
                    node('node-03'){
                      sh '''#!/bin/bash
+                     npm run fetchCoverage
                      pkill -f app.js -9 
-                     rm -rf /home/lisk/jenkins/workspace/lisk
                      '''
                  }
                }
            )
          }
-       }
-     
+        stage ('Gather Coverage') {
+            steps {
+               node('master'){
+                  sh '''rm -rf coverage || true
+                     mkdir coverage
+                     cd coverage
+                     // Fetching unit test coverage
+                     scp lisk@node-01:/home/lisk/jenkins/workspace/lisk/test/.coverage-unit/coverage.json coverage.json
+                     
+                     // Fetching Functional results
+                     cp lisk@node-01:/home/lisk/jenkins/workspace/lisk/test/.coverage-func.zip coverage-func-node-01.zip
+                     cp lisk@node-02:/home/lisk/jenkins/workspace/lisk/test/.coverage-func.zip coverage-func-node-02.zip
+                     cp lisk@node-03:/home/lisk/jenkins/workspace/lisk/test/.coverage-func.zip coverage-func-node-03.zip
+               }
+            }
+         }
+      }
   }
 }
