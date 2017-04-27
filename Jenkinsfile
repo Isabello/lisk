@@ -58,8 +58,8 @@ pipeline {
                     '''
                 }
               },
-              "Build Node-01" : {
-                node('node-01'){
+              "Build Node-03" : {
+                node('node-03'){
                  sh '''#!/bin/bash
                        cd /home/lisk/jenkins/workspace/
                        git clone https://github.com/LiskHQ/lisk.git
