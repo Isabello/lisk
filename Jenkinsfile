@@ -12,6 +12,7 @@ pipeline {
                              pkill -f app.js || true
                              rm -rf lisk
                              git clone https://github.com/LiskHQ/lisk.git
+                             cd lisk
                              git checkout $BRANCH_NAME
                              dropdb lisk_test
                              createdb lisk_test
@@ -40,6 +41,7 @@ pipeline {
                              pkill -f app.js || true
                              rm -rf lisk
                              git clone https://github.com/LiskHQ/lisk.git
+                             cd lisk
                              git checkout $BRANCH_NAME
                              dropdb lisk_test
                              createdb lisk_test
@@ -68,6 +70,7 @@ pipeline {
                              pkill -f app.js || true
                              rm -rf lisk
                              git clone https://github.com/LiskHQ/lisk.git
+                             cd lisk
                              git checkout $BRANCH_NAME
                              dropdb lisk_test
                              createdb lisk_test
