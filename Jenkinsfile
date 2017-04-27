@@ -8,10 +8,11 @@ pipeline {
                       node('node-01'){
                        sh '''#!/bin/bash
                              cd /home/lisk/jenkins/workspace/
-                             git clone https://github.com/LiskHQ/lisk.git
-                             cd lisk
-                             git checkout $BRANCH_NAME
+                             // Cleanup steps in case the job failed previously
                              pkill -f app.js || true
+                             rm lisk
+                             git clone https://github.com/LiskHQ/lisk.git
+                             git checkout $BRANCH_NAME
                              dropdb lisk_test
                              createdb lisk_test
                              psql -d lisk_test -c "alter user "$USER" with password 'password';"
@@ -35,10 +36,11 @@ pipeline {
                       node('node-02'){
                        sh '''#!/bin/bash
                              cd /home/lisk/jenkins/workspace/
-                             git clone https://github.com/LiskHQ/lisk.git
-                             cd lisk
-                             git checkout $BRANCH_NAME
+                             // Cleanup steps in case the job failed previously
                              pkill -f app.js || true
+                             rm lisk
+                             git clone https://github.com/LiskHQ/lisk.git
+                             git checkout $BRANCH_NAME
                              dropdb lisk_test
                              createdb lisk_test
                              psql -d lisk_test -c "alter user "$USER" with password 'password';"
@@ -62,10 +64,11 @@ pipeline {
                       node('node-03'){
                        sh '''#!/bin/bash
                              cd /home/lisk/jenkins/workspace/
-                             git clone https://github.com/LiskHQ/lisk.git
-                             cd lisk
-                             git checkout $BRANCH_NAME
+                             // Cleanup steps in case the job failed previously
                              pkill -f app.js || true
+                             rm lisk
+                             git clone https://github.com/LiskHQ/lisk.git
+                             git checkout $BRANCH_NAME
                              dropdb lisk_test
                              createdb lisk_test
                              psql -d lisk_test -c "alter user "$USER" with password 'password';"
