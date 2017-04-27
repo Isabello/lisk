@@ -86,7 +86,7 @@ pipeline {
               }
             }
         )
-      },
+      }
       stage ('Parallel Tests') { 
           steps {
             parallel(
@@ -307,7 +307,7 @@ pipeline {
            }
         )
       }
-    },
+    }
     stage ('Node Cleanup') {     
       steps {
             parallel(
