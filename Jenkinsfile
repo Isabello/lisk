@@ -1,7 +1,7 @@
 pipeline {
    agent none
       stages {
-        stage ('Starting Tests') { 
+        stage ('Parallel Tests') { 
           steps {
             parallel(
             "ESLint" : {
@@ -195,7 +195,7 @@ pipeline {
             "Unit - SQL" : {
               node('node-03'){
                sh '''
-               export TEST=test/api/peer.transactions.signatures.js  TEST_TYPE='FUNC'
+               export TEST=test/unit/sql TEST_TYPE='UNIT'
                cd /home/lisk/jenkins/workspace/lisk
                npm run jenkins
                '''
