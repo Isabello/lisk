@@ -10,7 +10,7 @@ pipeline {
                              cd /home/lisk/jenkins/workspace/
                              // Cleanup steps in case the job failed previously
                              pkill -f app.js || true
-                             rm lisk
+                             rm -rf lisk
                              git clone https://github.com/LiskHQ/lisk.git
                              git checkout $BRANCH_NAME
                              dropdb lisk_test
@@ -38,7 +38,7 @@ pipeline {
                              cd /home/lisk/jenkins/workspace/
                              // Cleanup steps in case the job failed previously
                              pkill -f app.js || true
-                             rm lisk
+                             rm -rf lisk
                              git clone https://github.com/LiskHQ/lisk.git
                              git checkout $BRANCH_NAME
                              dropdb lisk_test
@@ -66,7 +66,7 @@ pipeline {
                              cd /home/lisk/jenkins/workspace/
                              // Cleanup steps in case the job failed previously
                              pkill -f app.js || true
-                             rm lisk
+                             rm -rf lisk
                              git clone https://github.com/LiskHQ/lisk.git
                              git checkout $BRANCH_NAME
                              dropdb lisk_test
