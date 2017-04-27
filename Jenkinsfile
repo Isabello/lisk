@@ -315,21 +315,24 @@ pipeline {
               node('node-01'){
                sh '''#!/bin/bash
                pkill -f app.js -9 
-                  '''
+               rm -rf /home/lisk/jenkins/workspace/lisk
+               '''
               }
             },
               "Cleanup Node-02" : {
               node('node-02'){
                sh '''#!/bin/bash
                pkill -f app.js -9 
-                  '''
+               rm -rf /home/lisk/jenkins/workspace/lisk
+               '''
               }
             },
               "Cleanup Node-03" : {
               node('node-03'){
                sh '''#!/bin/bash
                pkill -f app.js -9 
-                  '''
+               rm -rf /home/lisk/jenkins/workspace/lisk
+               '''
               }
             }
          )
