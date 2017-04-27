@@ -357,6 +357,7 @@ pipeline {
                      cp lisk@node-01:/home/lisk/jenkins/workspace/lisk/test/.coverage-func.zip coverage-func-node-01.zip
                      cp lisk@node-02:/home/lisk/jenkins/workspace/lisk/test/.coverage-func.zip coverage-func-node-02.zip
                      cp lisk@node-03:/home/lisk/jenkins/workspace/lisk/test/.coverage-func.zip coverage-func-node-03.zip
+                     '''
                }
             }
          }
