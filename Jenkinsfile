@@ -1,8 +1,9 @@
 pipeline {
    agent none
       stages {
-       lock(resource: 'Lisk-Core-Nodes',  inversePrecedence: true){
+
            stage ('Node Provisioning') { 
+             lock(resource: 'Lisk-Core-Nodes',  inversePrecedence: true) {
                 steps {
                   parallel(
                     "Build Node-01" : {
@@ -88,6 +89,7 @@ pipeline {
                       }
                     )
                  }
+             }
            }
            stage ('Parallel Tests') { 
                steps {
@@ -340,6 +342,5 @@ pipeline {
            )
          }
        } 
-     } 
   }
 }
