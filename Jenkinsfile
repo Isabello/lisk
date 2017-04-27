@@ -4,8 +4,8 @@ pipeline {
 
            stage ('Node Provisioning') { 
                 steps {
-                 lock(resource: 'Lisk-Core-Nodes',  inversePrecedence: true) {
                   parallel(
+                    lock(resource: 'Lisk-Core-Nodes',  inversePrecedence: true) {
                     "Build Node-01" : {
                       node('node-01'){
                        sh '''#!/bin/bash
@@ -87,8 +87,8 @@ pipeline {
                           '''
                           }
                       }
-                    )
-                 }
+                    }
+                   )
              }
            }
            stage ('Parallel Tests') { 
