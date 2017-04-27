@@ -83,9 +83,10 @@ pipeline {
                        cp test/config.json test/genesisBlock.json .
                        BUILD_ID=dontKillMe ~/start_lisk.sh
                     '''
+                    }
                 }
-              }
-           )
+              )
+           }
         }
         stage ('Parallel Tests') { 
             steps {
