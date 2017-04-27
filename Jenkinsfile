@@ -159,7 +159,7 @@ pipeline {
             "Functional Peer - Peers" : {
               node('node-02'){
                sh '''
-               export TEST=test/api/peer.transactions.signatures.js  TEST_TYPE='FUNC'
+               export TEST=test/api/peers.js TEST_TYPE='FUNC'
                cd /home/lisk/jenkins/workspace/lisk
                npm run jenkins
                '''
