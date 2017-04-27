@@ -9,6 +9,9 @@ pipeline {
                sh '''#!/bin/bash
                     env
                     pwd
+                    echo $SCM
+                    echo $scm
+                    echo $BRANCH_NAME
                   '''
               }
             }
