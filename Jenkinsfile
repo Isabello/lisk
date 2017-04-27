@@ -342,9 +342,9 @@ pipeline {
                      '''
                  }
                }
-           )
-         }
-         }
+            )
+          }
+        }
         stage ('Gather Coverage') {
             steps {
                node('master'){
@@ -361,7 +361,7 @@ pipeline {
                      '''
                }
             }
-         }
-      }
-  }
+        }
+    }
 }
+
