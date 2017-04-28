@@ -351,16 +351,16 @@ pipeline {
         stage ('Gather Coverage') {
             steps {
                node('master'){
-                  sh '''rm -rf coverage || true
-                     mkdir coverage
-                     cd coverage
+                  sh '''rm -rf /var/lib/jenkins/coverage || true
+                     mkdir /var/lib/jenkins/coverage
+                     cd /var/lib/jenkins/coverage
                      // Fetching unit test coverage
-                     scp lisk@node-01:/home/lisk/jenkins/workspace/lisk/test/.coverage-unit/lcov.info ./.coverage-unit/lcov.info
+                     scp lisk@node-01:/home/lisk/jenkins/workspace/lisk/test/.coverage-unit/lcov.info /var/lib/jenkins/coverage/.coverage-unit/lcov.info
                      
                      // Fetching Functional results
-                     scp lisk@node-01:/home/lisk/jenkins/workspace/lisk/test/.coverage-func.zip coverage-func-node-01.zip
-                     scp lisk@node-02:/home/lisk/jenkins/workspace/lisk/test/.coverage-func.zip coverage-func-node-02.zip
-                     scp lisk@node-03:/home/lisk/jenkins/workspace/lisk/test/.coverage-func.zip coverage-func-node-03.zip
+                     scp lisk@node-01:/home/lisk/jenkins/workspace/lisk/test/.coverage-func.zip /var/lib/jenkins/coverage/coverage-func-node-01.zip
+                     scp lisk@node-02:/home/lisk/jenkins/workspace/lisk/test/.coverage-func.zip /var/lib/jenkins/coverage/coverage-func-node-02.zip
+                     scp lisk@node-03:/home/lisk/jenkins/workspace/lisk/test/.coverage-func.zip /var/lib/jenkins/coverage/coverage-func-node-03.zip
                      '''
                }
             }
