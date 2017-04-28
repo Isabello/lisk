@@ -355,16 +355,24 @@ pipeline {
                      mkdir coverage
                      cd coverage
                      // Fetching unit test coverage
-                     scp lisk@node-01:/home/lisk/jenkins/workspace/lisk/test/.coverage-unit/coverage.json coverage.json
+                     scp lisk@node-01:/home/lisk/jenkins/workspace/lisk/test/.coverage-unit/lcov.info ./.coverage-unit/lcov.info
                      
                      // Fetching Functional results
-                     cp lisk@node-01:/home/lisk/jenkins/workspace/lisk/test/.coverage-func.zip coverage-func-node-01.zip
-                     cp lisk@node-02:/home/lisk/jenkins/workspace/lisk/test/.coverage-func.zip coverage-func-node-02.zip
-                     cp lisk@node-03:/home/lisk/jenkins/workspace/lisk/test/.coverage-func.zip coverage-func-node-03.zip
+                     scp lisk@node-01:/home/lisk/jenkins/workspace/lisk/test/.coverage-func.zip coverage-func-node-01.zip
+                     scp lisk@node-02:/home/lisk/jenkins/workspace/lisk/test/.coverage-func.zip coverage-func-node-02.zip
+                     scp lisk@node-03:/home/lisk/jenkins/workspace/lisk/test/.coverage-func.zip coverage-func-node-03.zip
                      '''
                }
             }
         }
+        stage ('Combine Coverage') {
+            steps {
+               node('master'){
+                  sh '''cd coverage-scripts
+                     
+               }
+            }
+        }        
         stage ('Node Cleanup') {     
            steps {
              parallel(
