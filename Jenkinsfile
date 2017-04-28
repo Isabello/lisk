@@ -28,6 +28,7 @@ pipeline {
                              cd ..
                              cd test/lisk-js/; npm install; cd ../..
                              cp test/config.json test/genesisBlock.json .
+                             export NODE_ENV=test
                              BUILD_ID=dontKillMe ~/start_lisk.sh
                           '''
                       }
@@ -56,6 +57,7 @@ pipeline {
                              cd ..
                              cd test/lisk-js/; npm install; cd ../..
                              cp test/config.json test/genesisBlock.json .
+                             export NODE_ENV=test
                              BUILD_ID=dontKillMe ~/start_lisk.sh
                           '''
                       }
@@ -84,6 +86,7 @@ pipeline {
                              cd ..
                              cd test/lisk-js/; npm install; cd ../..
                              cp test/config.json test/genesisBlock.json .
+                             export NODE_ENV=test
                              BUILD_ID=dontKillMe ~/start_lisk.sh
                           '''
                          }
