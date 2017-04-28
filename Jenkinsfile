@@ -8,7 +8,6 @@ pipeline {
                       node('node-01'){
                        sh '''#!/bin/bash
                              cd /home/lisk/jenkins/workspace/
-                             // Cleanup steps in case the job failed previously
                              pkill -f app.js || true
                              rm -rf lisk
                              git clone https://github.com/LiskHQ/lisk.git
@@ -37,7 +36,6 @@ pipeline {
                       node('node-02'){
                        sh '''#!/bin/bash
                              cd /home/lisk/jenkins/workspace/
-                             // Cleanup steps in case the job failed previously
                              pkill -f app.js || true
                              rm -rf lisk
                              git clone https://github.com/LiskHQ/lisk.git
@@ -66,7 +64,6 @@ pipeline {
                       node('node-03'){
                        sh '''#!/bin/bash
                              cd /home/lisk/jenkins/workspace/
-                             // Cleanup steps in case the job failed previously
                              pkill -f app.js || true
                              rm -rf lisk
                              git clone https://github.com/LiskHQ/lisk.git
@@ -352,12 +349,10 @@ pipeline {
             steps {
                node('master'){
                   sh '''rm -rf /var/lib/jenkins/coverage || true
-                     mkdir /var/lib/jenkins/coverage
+                     mkdir -p /var/lib/jenkins/coverage/.coverage-unit
                      cd /var/lib/jenkins/coverage
-                     // Fetching unit test coverage
                      scp lisk@node-01:/home/lisk/jenkins/workspace/lisk/test/.coverage-unit/lcov.info /var/lib/jenkins/coverage/.coverage-unit/lcov.info
                      
-                     // Fetching Functional results
                      scp lisk@node-01:/home/lisk/jenkins/workspace/lisk/test/.coverage-func.zip /var/lib/jenkins/coverage/coverage-func-node-01.zip
                      scp lisk@node-02:/home/lisk/jenkins/workspace/lisk/test/.coverage-func.zip /var/lib/jenkins/coverage/coverage-func-node-02.zip
                      scp lisk@node-03:/home/lisk/jenkins/workspace/lisk/test/.coverage-func.zip /var/lib/jenkins/coverage/coverage-func-node-03.zip
