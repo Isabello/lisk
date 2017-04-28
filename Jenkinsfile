@@ -368,8 +368,10 @@ pipeline {
         stage ('Combine Coverage') {
             steps {
                node('master'){
-                  sh '''cd coverage-scripts
-                     
+                  sh '''cd /var/lib/jenkins/coverage-scripts
+                     bash after-success.sh
+                     rm -rf /var/lib/jenkins/coverage/*
+                     '''
                }
             }
         }        
