@@ -321,6 +321,7 @@ pipeline {
                "Coverage Node-01" : {
                  node('node-01'){
                    sh '''#!/bin/bash
+                     export HOST=127.0.0.1:4000
                      cd /home/lisk/jenkins/workspace/lisk
                    	npm run fetchCoverage
                       '''
@@ -329,6 +330,7 @@ pipeline {
                  "Coverage Node-02" : {
                    node('node-02'){
                      sh '''#!/bin/bash
+                     export HOST=127.0.0.1:4000
                      cd /home/lisk/jenkins/workspace/lisk
                      npm run fetchCoverage
                      '''
@@ -337,6 +339,7 @@ pipeline {
                  "Coverage Node-03" : {
                    node('node-03'){
                      sh '''#!/bin/bash
+                     export HOST=127.0.0.1:4000
                      cd /home/lisk/jenkins/workspace/lisk
                      npm run fetchCoverage
                      '''
