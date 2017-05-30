@@ -56,90 +56,88 @@ node('node-01'){
     }
 
     stage ('Parallel Tests') {
-      steps {
-        parallel(
-          "ESLint" : {
-            node('node-01'){
-             sh '''
+      parallel(
+        "ESLint" : {
+          node('node-01'){
+           sh '''
 
-             npm run eslint
-             '''
-            }
-          },
-          "Functional Accounts" : {
-            node('node-01'){
-             sh '''
-             export TEST=test/api/accounts.js TEST_TYPE='FUNC'
-
-             npm run jenkins
-             '''
-            }
-          },
-          "Functional Blocks" : {
-            node('node-01'){
-             sh '''
-             export TEST=test/api/blocks.js TEST_TYPE='FUNC'
-
-             npm run jenkins
+           npm run eslint
            '''
-            }
-          },
-          "Functional Delegates" : {
-            node('node-01'){
-             sh '''
-             export TEST=test/api/delegates.js TEST_TYPE='FUNC'
-
-             npm run jenkins
-             '''
-            }
-          },
-          "Functional Dapps" : {
-            node('node-01'){
-             sh '''
-             export TEST=test/api/dapps.js TEST_TYPE='FUNC'
-
-             npm run jenkins
-             '''
-            }
-          },
-          "Functional Loader" : {
-            node('node-01'){
-             sh '''
-             export TEST=test/api/loader.js TEST_TYPE='FUNC'
-
-             npm run jenkins
-             '''
-            }
-          },
-          "Functional Multisignatures" : {
-            node('node-01'){
-             sh '''
-             export TEST=test/api/multisignatures.js TEST_TYPE='FUNC'
-
-             npm run jenkins
-             '''
-            }
-          },
-          "Functional Signatures" : {
-            node('node-01'){
-             sh '''
-             export TEST=test/api/signatures.js TEST_TYPE='FUNC'
-
-             npm run jenkins
-             '''
-            }
-          },
-          "Functional Transactions" : {
-            node('node-01'){
-             sh '''
-             export TEST=test/api/transactions.js TEST_TYPE='FUNC'
-
-             npm run jenkins
-             '''
           }
+        },
+        "Functional Accounts" : {
+          node('node-01'){
+           sh '''
+           export TEST=test/api/accounts.js TEST_TYPE='FUNC'
+
+           npm run jenkins
+           '''
+          }
+        },
+        "Functional Blocks" : {
+          node('node-01'){
+           sh '''
+           export TEST=test/api/blocks.js TEST_TYPE='FUNC'
+
+           npm run jenkins
+         '''
+          }
+        },
+        "Functional Delegates" : {
+          node('node-01'){
+           sh '''
+           export TEST=test/api/delegates.js TEST_TYPE='FUNC'
+
+           npm run jenkins
+           '''
+          }
+        },
+        "Functional Dapps" : {
+          node('node-01'){
+           sh '''
+           export TEST=test/api/dapps.js TEST_TYPE='FUNC'
+
+           npm run jenkins
+           '''
+          }
+        },
+        "Functional Loader" : {
+          node('node-01'){
+           sh '''
+           export TEST=test/api/loader.js TEST_TYPE='FUNC'
+
+           npm run jenkins
+           '''
+          }
+        },
+        "Functional Multisignatures" : {
+          node('node-01'){
+           sh '''
+           export TEST=test/api/multisignatures.js TEST_TYPE='FUNC'
+
+           npm run jenkins
+           '''
+          }
+        },
+        "Functional Signatures" : {
+          node('node-01'){
+           sh '''
+           export TEST=test/api/signatures.js TEST_TYPE='FUNC'
+
+           npm run jenkins
+           '''
+          }
+        },
+        "Functional Transactions" : {
+          node('node-01'){
+           sh '''
+           export TEST=test/api/transactions.js TEST_TYPE='FUNC'
+
+           npm run jenkins
+           '''
         }
-      }
-    } # Hier endet node-01 tests
+      })
+    }
 
     stage ('Gather Coverage') {
       sh '''#!/bin/bash
