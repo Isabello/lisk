@@ -121,7 +121,7 @@ node('node-01'){
           '''
       })
     }
-
+/*
     stage ('Gather Coverage') {
       sh '''#!/bin/bash
       export HOST=127.0.0.1:4000
@@ -132,7 +132,7 @@ node('node-01'){
       scp test/.coverage-func.zip master-01:/var/lib/jenkins/coverage/coverage-func-node-01.zip
       '''
     }
-
+*/
     stage ('Node-01 Cleanup') {
       sh '''
       pkill -f app.js -9
@@ -278,7 +278,7 @@ node('node-02'){
         }
       )
     }
-
+/*
     stage ('Gather Coverage') {
       sh '''#!/bin/bash
       export HOST=127.0.0.1:4000
@@ -289,7 +289,7 @@ node('node-02'){
       scp test/.coverage-func.zip master-01:/var/lib/jenkins/coverage/coverage-func-node-02.zip
       '''
     }
-
+*/
     stage ('Node-02 Cleanup') {
       sh '''
       pkill -f app.js -9
@@ -401,7 +401,7 @@ node('node-03'){
         }
       )
     }
-
+/*
     stage ('Gather Coverage') {
       sh '''#!/bin/bash
       export HOST=127.0.0.1:4000
@@ -413,7 +413,7 @@ node('node-03'){
       scp test/.coverage-func.zip master-01:/var/lib/jenkins/coverage/coverage-func-node-03.zip
       '''
     }
-
+*/
     stage ('Node-03 Cleanup') {
       sh '''
       pkill -f app.js -9
