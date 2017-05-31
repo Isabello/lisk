@@ -1,9 +1,10 @@
-
 node('node-01'){
   lock(resource: "node-01", inversePrecedence: true) {
     stage ('Prepare Workspace') {
       sh '''#!/bin/bash
       pkill -f app.js || true
+      dropdb lisk_test || true
+      createdb lisk_test
       '''
       deleteDir()
       checkout scm
@@ -37,7 +38,7 @@ node('node-01'){
         '''
       } catch (err) {
         currentBuild.result = 'FAILURE'
-        error('Stopping build, webpack failed')
+        error('Stopping build, grunt failed')
       }
     }
 
@@ -51,91 +52,73 @@ node('node-01'){
         '''
       } catch (err) {
         currentBuild.result = 'FAILURE'
-        error('Stopping build, webpack failed')
+        error('Stopping build, Lisk failed')
       }
     }
 
     stage ('Parallel Tests') {
       parallel(
         "ESLint" : {
-          node('node-01'){
-           sh '''
-
-           npm run eslint
-           '''
-          }
+          sh '''
+          cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
+          npm run eslint
+          '''
         },
         "Functional Accounts" : {
-          node('node-01'){
-           sh '''
-           export TEST=test/api/accounts.js TEST_TYPE='FUNC'
-
-           npm run jenkins
-           '''
-          }
+          sh '''
+          export TEST=test/api/accounts.js TEST_TYPE='FUNC'
+          cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
+          npm run jenkins
+          '''
         },
         "Functional Blocks" : {
-          node('node-01'){
-           sh '''
-           export TEST=test/api/blocks.js TEST_TYPE='FUNC'
-
-           npm run jenkins
-         '''
-          }
+          sh '''
+          export TEST=test/api/blocks.js TEST_TYPE='FUNC'
+          cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
+          npm run jenkins
+          '''
         },
         "Functional Delegates" : {
-          node('node-01'){
-           sh '''
-           export TEST=test/api/delegates.js TEST_TYPE='FUNC'
-
-           npm run jenkins
-           '''
-          }
+          sh '''
+          export TEST=test/api/delegates.js TEST_TYPE='FUNC'
+          cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
+          npm run jenkins
+          '''
         },
         "Functional Dapps" : {
-          node('node-01'){
-           sh '''
-           export TEST=test/api/dapps.js TEST_TYPE='FUNC'
-
-           npm run jenkins
-           '''
-          }
+          sh '''
+          export TEST=test/api/dapps.js TEST_TYPE='FUNC'
+          cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
+          npm run jenkins
+          '''
         },
         "Functional Loader" : {
-          node('node-01'){
-           sh '''
-           export TEST=test/api/loader.js TEST_TYPE='FUNC'
-
-           npm run jenkins
-           '''
-          }
+          sh '''
+          export TEST=test/api/loader.js TEST_TYPE='FUNC'
+          cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
+          npm run jenkins
+          '''
         },
         "Functional Multisignatures" : {
-          node('node-01'){
-           sh '''
-           export TEST=test/api/multisignatures.js TEST_TYPE='FUNC'
-
-           npm run jenkins
-           '''
-          }
+          sh '''
+          export TEST=test/api/multisignatures.js TEST_TYPE='FUNC'
+          cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
+          npm run jenkins
+          '''
         },
         "Functional Signatures" : {
-          node('node-01'){
-           sh '''
-           export TEST=test/api/signatures.js TEST_TYPE='FUNC'
-
-           npm run jenkins
-           '''
-          }
+          sh '''
+          export TEST=test/api/signatures.js TEST_TYPE='FUNC'
+          cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
+          npm run jenkins
+          '''
         },
         "Functional Transactions" : {
-          node('node-01'){
-           sh '''
-           export TEST=test/api/transactions.js TEST_TYPE='FUNC'
-
-           npm run jenkins
-           '''
-        }
+          sh '''
+          export TEST=test/api/transactions.js TEST_TYPE='FUNC'
+          cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
+          npm run jenkins
+          '''
       })
     }
 
@@ -146,7 +129,6 @@ node('node-01'){
       npm run fetchCoverage
 
       # Submit coverage reports to Master
-      scp test/.coverage-unit/lcov.info master-01:/var/lib/jenkins/coverage/.coverage-unit/lcov.info
       scp test/.coverage-func.zip master-01:/var/lib/jenkins/coverage/coverage-func-node-01.zip
       '''
     }
@@ -164,233 +146,283 @@ node('node-01'){
   }
 }
 
-/*
+node('node-02'){
+  lock(resource: "node-02", inversePrecedence: true) {
+    stage ('Prepare Workspace') {
+      sh '''#!/bin/bash
+      pkill -f app.js || true
+      dropdb lisk_test || true
+      createdb lisk_test
+      '''
+      deleteDir()
+      checkout scm
+    }
 
-           s,
-                   "Functional Peer - Peer" : {
-                     node('node-02'){
-                      sh '''
-                      export TEST=test/api/peer.js TEST_TYPE='FUNC'
+    stage ('Build Dependencies') {
+      try {
+        sh '''#!/bin/bash
 
-                      npm run jenkins
-                      '''
-                     }
-                   },
-                   "Functional Peer - Dapp" : {
-                     node('node-02'){
-                      sh '''
-                      export TEST=test/api/peer.dapp.js TEST_TYPE='FUNC'
+        # Install Deps
+        npm install
 
-                      npm run jenkins
-                      '''
-                     }
-                   },
-                   "Functional Peer - Blocks" : {
-                     node('node-02'){
-                      sh '''
-                      export TEST=test/api/peer.blocks.js TEST_TYPE='FUNC'
+        # Install Nodejs
+        tar -zxf ~/lisk-node-Linux-x86_64.tar.gz
+        '''
+      } catch (err) {
+        currentBuild.result = 'FAILURE'
+        error('Stopping build, installation failed')
+      }
+    }
 
-                      npm run jenkins
-                      '''
-                     }
-                   },
-                   "Functional Peer - Signatures" : {
-                     node('node-02'){
-                      sh '''
-                      export TEST=test/api/peer.signatures.js TEST_TYPE='FUNC'
+    stage ('Build submodules') {
+      try {
+        sh '''#!/bin/bash
+        git submodule init
+        git submodule update
+        cd public/
+        npm install
+        bower install
+        grunt release
+        '''
+      } catch (err) {
+        currentBuild.result = 'FAILURE'
+        error('Stopping build, grunt failed')
+      }
+    }
 
-                      npm run jenkins
-                      '''
-                     }
-                   },
-                   "Functional Peer - Transactions Collision" : {
-                     node('node-02'){
-                      sh '''
-                      export TEST=test/api/peer.transactions.collision.js TEST_TYPE='FUNC'
+    stage ('Setup test environemnt') {
+      try {
+        sh '''#!/bin/bash
+        cd test/lisk-js/; npm install; cd ../..
+        cp test/config.json test/genesisBlock.json .
+        export NODE_ENV=test
+        BUILD_ID=dontKillMe ~/start_lisk.sh
+        '''
+      } catch (err) {
+        currentBuild.result = 'FAILURE'
+        error('Stopping build, Lisk failed')
+      }
+    }
 
-                      npm run jenkins
-                      '''
-                     }
-                   },
-                   "Functional Peer - Transactions Delegates" : {
-                     node('node-02'){
-                      sh '''
-                      export TEST=test/api/peer.transactions.delegates.js TEST_TYPE='FUNC'
-
-                      npm run jenkins
-                      '''
-                     }
-                   },
-                   "Functional Peer - Transactions Main" : {
-                     node('node-02'){
-                      sh '''
-                      export TEST=test/api/peer.transactions.main.js  TEST_TYPE='FUNC'
-
-                      npm run jenkins
-                      '''
-                     }
-                   },
-                   "Functional Peer - Transaction Signatures" : {
-                     node('node-02'){
-                      sh '''
-                      export TEST=test/api/peer.transactions.signatures.js  TEST_TYPE='FUNC'
-
-                      npm run jenkins
-                      '''
-                     }
-                   },
-                   "Functional Peer - Peers" : {
-                     node('node-02'){
-                      sh '''
-                      export TEST=test/api/peers.js TEST_TYPE='FUNC'
-
-                      npm run jenkins
-                      '''
-                     }
-                   },
-                   "Functional Peer - Votes" : {
-                     node('node-02'){
-                      sh '''
-                      export TEST=test/api/peer.transactions.votes.js TEST_TYPE='FUNC'
-
-                      npm run jenkins
-                      '''
-                     }
-                   },
-                   "Unit - Helpers" : {
-                     node('node-03'){
-                      sh '''
-                      export TEST=test/unit/helpers TEST_TYPE='UNIT'
-
-                      npm run jenkins
-                      '''
-                     }
-                   },
-                   "Unit - Modules" : {
-                     node('node-03'){
-                      sh '''
-                      export TEST=test/unit/modules TEST_TYPE='UNIT'
-
-                      npm run jenkins
-                      '''
-                     }
-                   },
-                   "Unit - SQL" : {
-                     node('node-03'){
-                      sh '''
-                      export TEST=test/unit/sql TEST_TYPE='UNIT'
-
-                      npm run jenkins
-                      '''
-                     }
-                   },
-                   "Unit - Logic" : {
-                     node('node-03'){
-                      sh '''
-                      export TEST=test/unit/logic TEST_TYPE='UNIT'
-
-                      npm run jenkins
-                      '''
-                     }
-                   },
-                   "Functional Stress - Transactions" : {
-                     node('node-03'){
-                      sh '''
-                      export TEST=test/api/peer.transactions.stress.js TEST_TYPE='FUNC'
-
-                      npm run jenkins
-                      '''
-                     }
-                  }
-               )
-            }
-         }
-         stage ('Generate Coverage') {
-           steps {
-             parallel(
-               "Coverage Node-01" : {
-                 node('node-01'){
-                   sh '''#!/bin/bash
-                     export HOST=127.0.0.1:4000
-
-                   	npm run fetchCoverage
-                      '''
-                     }
-                   },
-                 "Coverage Node-02" : {
-                   node('node-02'){
-                     sh '''#!/bin/bash
-                     export HOST=127.0.0.1:4000
-
-                     npm run fetchCoverage
-                     '''
-                     }
-                 },
-                 "Coverage Node-03" : {
-                   node('node-03'){
-                     sh '''#!/bin/bash
-                     export HOST=127.0.0.1:4000
-
-                     npm run fetchCoverage
-                     '''
-                 }
-               }
-            )
-          }
+    stage ('Parallel Tests') {
+      parallel(
+        "Functional Peer - Peer" : {
+          sh '''
+          export TEST=test/api/peer.js TEST_TYPE='FUNC'
+          cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
+          npm run jenkins
+          '''
+        },
+        "Functional Peer - Dapp" : {
+          sh '''
+          export TEST=test/api/peer.dapp.js TEST_TYPE='FUNC'
+          cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
+          npm run jenkins
+          '''
+        },
+        "Functional Peer - Blocks" : {
+          sh '''
+          export TEST=test/api/peer.blocks.js TEST_TYPE='FUNC'
+          cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
+          npm run jenkins
+          '''
+        },
+        "Functional Peer - Signatures" : {
+          sh '''
+          export TEST=test/api/peer.signatures.js TEST_TYPE='FUNC'
+          cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
+          npm run jenkins
+          '''
+        },
+        "Functional Peer - Transactions Collision" : {
+          sh '''
+          export TEST=test/api/peer.transactions.collision.js TEST_TYPE='FUNC'
+          cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
+          npm run jenkins
+          '''
+        },
+        "Functional Peer - Transactions Delegates" : {
+          sh '''
+          export TEST=test/api/peer.transactions.delegates.js TEST_TYPE='FUNC'
+          cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
+          npm run jenkins
+          '''
+        },
+        "Functional Peer - Transactions Main" : {
+          sh '''
+          export TEST=test/api/peer.transactions.main.js  TEST_TYPE='FUNC'
+          cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
+          npm run jenkins
+          '''
+        },
+        "Functional Peer - Transaction Signatures" : {
+          sh '''
+          export TEST=test/api/peer.transactions.signatures.js  TEST_TYPE='FUNC'
+          cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
+          npm run jenkins
+          '''
+        },
+        "Functional Peer - Peers" : {
+          sh '''
+          export TEST=test/api/peers.js TEST_TYPE='FUNC'
+          cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
+          npm run jenkins
+          '''
+        },
+        "Functional Peer - Votes" : {
+          sh '''
+          export TEST=test/api/peer.transactions.votes.js TEST_TYPE='FUNC'
+          cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
+          npm run jenkins
+          '''
         }
-        stage ('Gather Coverage') {
-            steps {
-               node('master'){
-                  sh '''rm -rf /var/lib/jenkins/coverage || true
-                     mkdir -p /var/lib/jenkins/coverage/.coverage-unit
-                     cd /var/lib/jenkins/coverage
-                     scp lisk@node-01:/home/lisk/jenkins/workspace/lisk/test/.coverage-unit/lcov.info /var/lib/jenkins/coverage/.coverage-unit/lcov.info
+      )
+    }
 
-                     scp lisk@node-01:/home/lisk/jenkins/workspace/lisk/test/.coverage-func.zip /var/lib/jenkins/coverage/coverage-func-node-01.zip
-                     scp lisk@node-02:/home/lisk/jenkins/workspace/lisk/test/.coverage-func.zip /var/lib/jenkins/coverage/coverage-func-node-02.zip
-                     scp lisk@node-03:/home/lisk/jenkins/workspace/lisk/test/.coverage-func.zip /var/lib/jenkins/coverage/coverage-func-node-03.zip
-                     '''
-               }
-            }
+    stage ('Gather Coverage') {
+      sh '''#!/bin/bash
+      export HOST=127.0.0.1:4000
+
+      npm run fetchCoverage
+
+      # Submit coverage reports to Master
+      scp test/.coverage-func.zip master-01:/var/lib/jenkins/coverage/coverage-func-node-02.zip
+      '''
+    }
+
+    stage ('Node-02 Cleanup') {
+      sh '''
+      pkill -f app.js -9
+      '''
+      }
+
+    stage ('Set milestone') {
+      milestone 2
+      currentBuild.result = 'SUCCESS'
+    }
+  }
+}
+
+
+node('node-03'){
+  lock(resource: "node-03", inversePrecedence: true) {
+    stage ('Prepare Workspace') {
+      sh '''#!/bin/bash
+      pkill -f app.js || true
+      dropdb lisk_test || true
+      createdb lisk_test
+      '''
+      deleteDir()
+      checkout scm
+    }
+
+    stage ('Build Dependencies') {
+      try {
+        sh '''#!/bin/bash
+
+        # Install Deps
+        npm install
+
+        # Install Nodejs
+        tar -zxf ~/lisk-node-Linux-x86_64.tar.gz
+        '''
+      } catch (err) {
+        currentBuild.result = 'FAILURE'
+        error('Stopping build, installation failed')
+      }
+    }
+
+    stage ('Build submodules') {
+      try {
+        sh '''#!/bin/bash
+        git submodule init
+        git submodule update
+        cd public/
+        npm install
+        bower install
+        grunt release
+        '''
+      } catch (err) {
+        currentBuild.result = 'FAILURE'
+        error('Stopping build, Grunt failed')
+      }
+    }
+
+    stage ('Setup test environemnt') {
+      try {
+        sh '''#!/bin/bash
+        cd test/lisk-js/; npm install; cd ../..
+        cp test/config.json test/genesisBlock.json .
+        export NODE_ENV=test
+        BUILD_ID=dontKillMe ~/start_lisk.sh
+        '''
+      } catch (err) {
+        currentBuild.result = 'FAILURE'
+        error('Stopping build, Lisk failed')
+      }
+    }
+
+    stage ('Parallel Tests') {
+      parallel(
+        "Unit - Helpers" : {
+           sh '''
+           export TEST=test/unit/helpers TEST_TYPE='UNIT'
+           cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
+           npm run jenkins
+           '''
+        },
+        "Unit - Modules" : {
+           sh '''
+           export TEST=test/unit/modules TEST_TYPE='UNIT'
+           cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
+           npm run jenkins
+           '''
+        },
+        "Unit - SQL" : {
+           sh '''
+           export TEST=test/unit/sql TEST_TYPE='UNIT'
+           cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
+           npm run jenkins
+           '''
+        },
+        "Unit - Logic" : {
+           sh '''
+           export TEST=test/unit/logic TEST_TYPE='UNIT'
+           cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
+           npm run jenkins
+           '''
+        },
+        "Functional Stress - Transactions" : {
+           sh '''
+           export TEST=test/api/peer.transactions.stress.js TEST_TYPE='FUNC'
+           cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
+           npm run jenkins
+           '''
         }
-        stage ('Combine Coverage') {
-            steps {
-               node('master'){
-                  sh '''cd /var/lib/jenkins/coverage-scripts
-                     bash after-success.sh
-                     rm -rf /var/lib/jenkins/coverage/*
-                     '''
-               }
-            }
-        }
-        stage ('Node Cleanup') {
-           steps {
-             parallel(
-               "Cleanup Node-01" : {
-                 node('node-01'){
-                   sh '''
-                     pkill -f app.js -9
-                      '''
-                     }
-                   },
-                 "Cleanup Node-02" : {
-                   node('node-02'){
-                     sh '''
-                     pkill -f app.js -9
-                     '''
-                     }
-                 },
-                 "Cleanup Node-03" : {
-                   node('node-03'){
-                     sh '''
-                     pkill -f app.js -9
-                     '''
-                 }
-               }
-            )
-          }
-        }
+      )
+    }
 
+    stage ('Gather Coverage') {
+      sh '''#!/bin/bash
+      export HOST=127.0.0.1:4000
 
+      npm run fetchCoverage
 
-*/
+      # Submit coverage reports to Master
+      scp test/.coverage-unit/lcov.info master-01:/var/lib/jenkins/coverage/.coverage-unit/lcov.info
+      scp test/.coverage-func.zip master-01:/var/lib/jenkins/coverage/coverage-func-node-03.zip
+      '''
+    }
+
+    stage ('Node-03 Cleanup') {
+      sh '''
+      pkill -f app.js -9
+      '''
+      }
+
+    stage ('Set milestone') {
+      milestone 2
+      currentBuild.result = 'SUCCESS'
+    }
+  }
+}
