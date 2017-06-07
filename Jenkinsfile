@@ -64,14 +64,21 @@ lock(resource: "Lisk-Core-Nodes", inversePrecedence: true) {
           initBuild()
         }
       },
-      "Sanatize Master Workspace" : {
+      "Initialize Master Workspace" : {
         node('master-01'){
           sh '''
           cd /var/lib/jenkins/coverage/
           rm -rf node-0*
           rm -rf *.zip
           rm -rf coverage-unit/*
+          rm -rf lisk/*
           rm -f merged-lcov.info
+          cd lisk
+          '''
+          deleteDir()
+          checkout scm
+          sh '''
+          mv -f $WORKSPACE/* /var/lib/jenkins/coverage/lisk
           '''
         }
       }
@@ -389,6 +396,9 @@ lock(resource: "Lisk-Core-Nodes", inversePrecedence: true) {
       unzip coverage-func-node-03.zip -d node-03
 
       bash merge_lcov.sh . merged-lcov.info
+      cp merged-lcov.info lisk/merged-lcov.info
+      cp .coveralls.yml lisk/.coveralls.yml
+      cd lisk/
       cat "merged-lcov.info" | coveralls
       '''
     }
@@ -425,6 +435,7 @@ lock(resource: "Lisk-Core-Nodes", inversePrecedence: true) {
         rm -rf *.zip
         rm -rf coverage-unit/*
         rm -f merged-lcov.info
+        rm -rf lisk/*
         '''
         }
       }
