@@ -10,7 +10,7 @@ def initBuild() {
 
 environment {
     COVERALLS_SERVICE_NAME = 'jenkins-ci'
-    COVERALLS_REPO_TOKEN = '7s05KDqmPWkwZ6nzU5WtznKkt5FKDE3kv'
+    COVERALLS_REPO_TOKEN = 'kCml1Tq7jiy0Us7NIzykDtD1INPU7R3Fe'
     CI = 'true'
     CI_BRANCH = '$BRANCH_NAME'
     CI_BUILD_NUMBER = '$BUILD_NUMBER'
