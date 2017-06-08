@@ -8,6 +8,14 @@ def initBuild() {
   checkout scm
 }
 
+environment {
+    COVERALLS_SERVICE_NAME = 'jenkins-ci'
+    COVERALLS_REPO_TOKEN = '7s05KDqmPWkwZ6nzU5WtznKkt5FKDE3kv'
+    CI = 'true'
+    CI_BRANCH = '$BRANCH_NAME'
+    CI_BUILD_NUMBER = '$BUILD_NUMBER'
+}
+
 def buildDependency() {
   try {
     sh '''#!/bin/bash
@@ -399,7 +407,7 @@ lock(resource: "Lisk-Core-Nodes", inversePrecedence: true) {
       cp merged-lcov.info lisk/merged-lcov.info
       cp .coveralls.yml lisk/.coveralls.yml
       cd lisk/
-      cat "merged-lcov.info" | coveralls
+      cat merged-lcov.info | coveralls -v
       '''
     }
   }
