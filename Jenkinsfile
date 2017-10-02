@@ -52,41 +52,27 @@ def report(){
 	])
 }
 
-lock(resource: "Lisk-Core-Nodes", inversePrecedence: true) {
+lock(resource: "Lisk-Core-Nodes-New", inversePrecedence: true) {
 	stage ('Prepare Workspace') {
 		parallel(
-			"Build Node-01" : {
-				node('node-01'){
+			"Build node-11" : {
+				node('node-11'){
 					initBuild()
 				}
 			},
-			"Build Node-02" : {
-				node('node-02'){
+			"Build node-12" : {
+				node('node-12'){
 					initBuild()
 				}
 			},
-			"Build Node-03" : {
-				node('node-03'){
+			"Build node-13" : {
+				node('node-13'){
 					initBuild()
 				}
 			},
-			"Build Node-04" : {
-				node('node-04'){
+			"Build node-14" : {
+				node('node-14'){
 					initBuild()
-				}
-			},
-			"Initialize Master Workspace" : {
-				node('master-01'){
-					sh '''
-					cd /var/lib/jenkins/coverage/
-					rm -rf node-0*
-					rm -rf *.zip
-					rm -rf coverage-unit/*
-					rm -rf lisk/*
-					rm -f merged-lcov.info
-					'''
-					deleteDir()
-					checkout scm
 				}
 			}
 		)
@@ -94,23 +80,23 @@ lock(resource: "Lisk-Core-Nodes", inversePrecedence: true) {
 
 	stage ('Build Dependencies') {
 		parallel(
-			"Build Dependencies Node-01" : {
-				node('node-01'){
+			"Build Dependencies node-11" : {
+				node('node-11'){
 					buildDependency()
 				}
 			},
-			"Build Dependencies Node-02" : {
-				node('node-02'){
+			"Build Dependencies node-12" : {
+				node('node-12'){
 					buildDependency()
 				}
 			},
-			"Build Dependencies Node-03" : {
-				node('node-03'){
+			"Build Dependencies node-13" : {
+				node('node-13'){
 					buildDependency()
 				}
 			},
-			"Build Dependencies Node-04" : {
-				node('node-04'){
+			"Build Dependencies node-14" : {
+				node('node-14'){
 					buildDependency()
 				}
 			}
@@ -119,23 +105,23 @@ lock(resource: "Lisk-Core-Nodes", inversePrecedence: true) {
 
 	stage ('Start Lisk') {
 		parallel(
-			"Start Lisk Node-01" : {
-				node('node-01'){
+			"Start Lisk node-11" : {
+				node('node-11'){
 					startLisk()
 				}
 			},
-			"Start Lisk Node-02" : {
-				node('node-02'){
+			"Start Lisk node-12" : {
+				node('node-12'){
 					startLisk()
 				}
 			},
-			"Start Lisk Node-03" : {
-				node('node-03'){
+			"Start Lisk node-13" : {
+				node('node-13'){
 					startLisk()
 				}
 			},
-			"Start Lisk Node-04" : {
-				node('node-04'){
+			"Start Lisk node-14" : {
+				node('node-14'){
 					startLisk()
 				}
 			}
@@ -145,7 +131,7 @@ lock(resource: "Lisk-Core-Nodes", inversePrecedence: true) {
 	stage ('Parallel Tests') {
 		parallel(
 			"ESLint" : {
-				node('node-01'){
+				node('node-11'){
 					sh '''
 					cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
 					npm run eslint
@@ -153,7 +139,7 @@ lock(resource: "Lisk-Core-Nodes", inversePrecedence: true) {
 				}
 			},
 			"Functional Accounts" : {
-				node('node-01'){
+				node('node-11'){
 					sh '''
 					export TEST=test/api/accounts.js TEST_TYPE='FUNC' NODE_ENV='TEST'
 					cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
@@ -162,7 +148,7 @@ lock(resource: "Lisk-Core-Nodes", inversePrecedence: true) {
 				}
 			},
 			"Functional Blocks" : {
-				node('node-01'){
+				node('node-11'){
 					sh '''
 					export TEST=test/api/blocks.js TEST_TYPE='FUNC' NODE_ENV='TEST'
 					cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
@@ -171,7 +157,7 @@ lock(resource: "Lisk-Core-Nodes", inversePrecedence: true) {
 				}
 			},
 			"Functional Delegates" : {
-				node('node-01'){
+				node('node-11'){
 					sh '''
 					export TEST=test/api/delegates.js TEST_TYPE='FUNC' NODE_ENV='TEST'
 					cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
@@ -180,7 +166,7 @@ lock(resource: "Lisk-Core-Nodes", inversePrecedence: true) {
 				}
 			},
 			"Functional Dapps" : {
-				node('node-01'){
+				node('node-11'){
 					sh '''
 					export TEST=test/api/dapps.js TEST_TYPE='FUNC' NODE_ENV='TEST'
 					cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
@@ -189,7 +175,7 @@ lock(resource: "Lisk-Core-Nodes", inversePrecedence: true) {
 				}
 			},
 			"Functional Loader" : {
-				node('node-01'){
+				node('node-11'){
 					sh '''
 					export TEST=test/api/loader.js TEST_TYPE='FUNC' NODE_ENV='TEST'
 					cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
@@ -198,7 +184,7 @@ lock(resource: "Lisk-Core-Nodes", inversePrecedence: true) {
 				}
 			},
 			"Functional Transport - Handshake" : {
-				node('node-02'){
+				node('node-12'){
 					sh '''
 					export TEST=test/api/transport/transport.handshake.js TEST_TYPE='FUNC' NODE_ENV='TEST'
 					cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
@@ -207,7 +193,7 @@ lock(resource: "Lisk-Core-Nodes", inversePrecedence: true) {
 				}
 			},
 			"Functional Multisignatures" : {
-				node('node-01'){
+				node('node-11'){
 					sh '''
 					export TEST=test/api/multisignatures.js TEST_TYPE='FUNC' NODE_ENV='TEST'
 					cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
@@ -216,7 +202,7 @@ lock(resource: "Lisk-Core-Nodes", inversePrecedence: true) {
 				}
 			},
 			"Functional Multisignatures POST" : {
-				node('node-01'){
+				node('node-11'){
 					sh '''
 					export TEST=test/api/multisignatures.post.js TEST_TYPE='FUNC' NODE_ENV='TEST'
 					cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
@@ -225,16 +211,16 @@ lock(resource: "Lisk-Core-Nodes", inversePrecedence: true) {
 				}
 			},
 			"Functional Transactions" : {
-				node('node-01'){
+				node('node-11'){
 					sh '''
 					export TEST=test/api/transactions.js TEST_TYPE='FUNC' NODE_ENV='TEST'
 					cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
 					npm run jenkins
 					'''
 				}
-			}, //End node-01 functional tests
+			}, //End node-11 functional tests
 			"Functional Transport - Main" : {
-				node('node-02'){
+				node('node-12'){
 					sh '''
 					export TEST=test/api/transport/transport.js TEST_TYPE='FUNC' NODE_ENV='TEST'
 					cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
@@ -243,7 +229,7 @@ lock(resource: "Lisk-Core-Nodes", inversePrecedence: true) {
 				}
 			},
 			"Functional Transport - Blocks" : {
-				node('node-02'){
+				node('node-12'){
 					sh '''
 					export TEST=test/api/transport/transport.blocks.js TEST_TYPE='FUNC' NODE_ENV='TEST'
 					cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
@@ -252,7 +238,7 @@ lock(resource: "Lisk-Core-Nodes", inversePrecedence: true) {
 				}
 			},
 			"Functional Transport - Client" : {
-				node('node-02'){
+				node('node-12'){
 					sh '''
 					export TEST=test/api/transport/transport.client.js TEST_TYPE='FUNC' NODE_ENV='TEST'
 					cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
@@ -261,7 +247,7 @@ lock(resource: "Lisk-Core-Nodes", inversePrecedence: true) {
 				}
 			},
 			"Functional Transport - Transactions Main" : {
-				node('node-02'){
+				node('node-12'){
 					sh '''
 					export TEST=test/api/transport/transport.transactions.main.js  TEST_TYPE='FUNC' NODE_ENV='TEST'
 					cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
@@ -270,25 +256,25 @@ lock(resource: "Lisk-Core-Nodes", inversePrecedence: true) {
 				}
 			},
 			"Functional Transport - Peers" : {
-				node('node-02'){
+				node('node-12'){
 					sh '''
 					export TEST=test/api/peers.js TEST_TYPE='FUNC' NODE_ENV='TEST'
 					cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
 					npm run jenkins
 					'''
 				}
-			},  // End Node-02 functional tests
+			},  // End node-12 functional tests
 			"Unit Tests" : {
-				node('node-03'){
+				node('node-13'){
 					sh '''
 					export TEST_TYPE='UNIT' NODE_ENV='TEST'
 					cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
 					npm run test-unit
 					'''
 				}
-			}, // End Node-03 unit tests
+			}, // End node-13 unit tests
 			"Functional Stress - Transactions" : {
-				node('node-04'){
+				node('node-14'){
 					sh '''
 					export TEST=test/api/transport/transport.transactions.stress.js TEST_TYPE='FUNC' NODE_ENV='TEST'
 					cd "$(echo $WORKSPACE | cut -f 1 -d '@')"
@@ -297,118 +283,6 @@ lock(resource: "Lisk-Core-Nodes", inversePrecedence: true) {
 				}
 			}
 		) // End Parallel
-	}
-
-	stage ('Gather Coverage') {
-		parallel(
-			"Gather Coverage Node-01" : {
-				node('node-01'){
-					sh '''#!/bin/bash
-					export HOST=127.0.0.1:4000
-					npm run fetchCoverage
-					# Submit coverage reports to Master
-					scp test/.coverage-func.zip jenkins@master-01:/var/lib/jenkins/coverage/coverage-func-node-01.zip
-					'''
-				}
-			},
-			"Gather Coverage Node-02" : {
-				node('node-02'){
-					sh '''#!/bin/bash
-					export HOST=127.0.0.1:4000
-					npm run fetchCoverage
-					# Submit coverage reports to Master
-					scp test/.coverage-func.zip jenkins@master-01:/var/lib/jenkins/coverage/coverage-func-node-02.zip
-					'''
-				}
-			},
-			"Gather Coverage Node-03" : {
-				node('node-03'){
-					sh '''#!/bin/bash
-					export HOST=127.0.0.1:4000
-					# Gathers unit test into single lcov.info
-					npm run coverageReport
-					npm run fetchCoverage
-					# Submit coverage reports to Master
-					scp test/.coverage-unit/* jenkins@master-01:/var/lib/jenkins/coverage/coverage-unit/
-					scp test/.coverage-func.zip jenkins@master-01:/var/lib/jenkins/coverage/coverage-func-node-03.zip
-					'''
-				}
-			},
-			"Gather Coverage Node-04" : {
-				node('node-04'){
-					sh '''#!/bin/bash
-					export HOST=127.0.0.1:4000
-					npm run fetchCoverage
-					# Submit coverage reports to Master
-					scp test/.coverage-func.zip jenkins@master-01:/var/lib/jenkins/coverage/coverage-func-node-04.zip
-					'''
-				}
-			}
-		)
-	}
-
-	stage ('Submit Coverage') {
-		node('master-01'){
-			sh '''
-			cd /var/lib/jenkins/coverage/
-			unzip coverage-func-node-01.zip -d node-01
-			unzip coverage-func-node-02.zip -d node-02
-			unzip coverage-func-node-03.zip -d node-03
-			unzip coverage-func-node-04.zip -d node-04
-			bash merge_lcov.sh . merged-lcov.info
-			cp merged-lcov.info $WORKSPACE/merged-lcov.info
-			cp .coveralls.yml $WORKSPACE/.coveralls.yml
-			cd $WORKSPACE
-			cat merged-lcov.info | coveralls -v
-			'''
-		}
-	}
-
-	stage ('Cleanup') {
-		parallel(
-			"Cleanup Node-01" : {
-				node('node-01'){
-					sh '''
-					pkill -f app.js -9
-					'''
-				}
-			},
-			"Cleanup Node-02" : {
-				node('node-02'){
-					sh '''
-					pkill -f app.js -9
-					'''
-				}
-			},
-			"Cleanup Node-03" : {
-				node('node-03'){
-					sh '''
-					pkill -f app.js -9
-					'''
-				}
-			},
-			"Cleanup Node-04" : {
-				node('node-04'){
-					sh '''
-					pkill -f app.js -9
-					'''
-				}
-			},
-			"Cleanup Master" : {
-				node('master-01'){
-					sh '''
-					cd /var/lib/jenkins/coverage/
-					rm -rf node-0*
-					rm -rf *.zip
-					rm -rf coverage-unit/*
-					rm -f merged-lcov.info
-					rm -rf lisk/*
-					rm -f coverage.json
-					rm -f lcov.info
-					'''
-				}
-			}
-		)
 	}
 
 	stage ('Set milestone') {
