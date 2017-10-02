@@ -56,7 +56,7 @@ module.exports = {
 			},
 			senderPublicKeys: {
 				type: 'array',
-				minLength: 1,
+				minItems: 1,
 				'items': {
 					type: 'string',
 					format: 'publicKey'
@@ -64,7 +64,7 @@ module.exports = {
 			},
 			recipientPublicKeys: {
 				type: 'array',
-				minLength: 1,
+				minItems: 1,
 				'items': {
 					type: 'string',
 					format: 'publicKey'
@@ -72,7 +72,7 @@ module.exports = {
 			},
 			senderIds: {
 				type: 'array',
-				minLength: 1,
+				minItems: 1,
 				'items': {
 					type: 'string',
 					format: 'address',
@@ -82,7 +82,7 @@ module.exports = {
 			},
 			recipientIds: {
 				type: 'array',
-				minLength: 1,
+				minItems: 1,
 				'items': {
 					type: 'string',
 					format: 'address',
@@ -181,41 +181,5 @@ module.exports = {
 				maxLength: 22
 			}
 		}
-	},
-	addTransactions: {
-		id: 'transactions.addTransactions',
-		type: 'object',
-		properties: {
-			secret: {
-				type: 'string',
-				minLength: 1,
-				maxLength: 100
-			},
-			amount: {
-				type: 'integer',
-				minimum: 1,
-				maximum: constants.totalAmount
-			},
-			recipientId: {
-				type: 'string',
-				format: 'address',
-				minLength: 1,
-				maxLength: 22
-			},
-			publicKey: {
-				type: 'string',
-				format: 'publicKey'
-			},
-			secondSecret: {
-				type: 'string',
-				minLength: 1,
-				maxLength: 100
-			},
-			multisigAccountPublicKey: {
-				type: 'string',
-				format: 'publicKey'
-			}
-		},
-		required: ['secret', 'amount', 'recipientId']
 	}
 };

@@ -3,6 +3,9 @@
 var strftime = require('strftime').utc();
 var fs = require('fs');
 var util = require('util');
+var child_process = require('child_process');
+var path = require('path');
+
 require('colors');
 
 module.exports = function (config) {
@@ -10,6 +13,7 @@ module.exports = function (config) {
 	var exports = {};
 
 	config.levels = config.levels || {
+		none: 99,
 		trace: 0,
 		debug: 1,
 		log: 2,
@@ -29,10 +33,11 @@ module.exports = function (config) {
 		fatal: 'FTL'
 	};
 
-	config.filename = config.filename || __dirname + '/logs.log';
+	config.filename = process.cwd() + '/' + (config.filename || 'logs.log');
 
 	config.errorLevel = config.errorLevel || 'log';
 
+	child_process.execSync('mkdir -p ' + path.dirname(config.filename));
 	var log_file = fs.createWriteStream(config.filename, {flags: 'a'});
 
 	exports.setLevel = function (errorLevel) {

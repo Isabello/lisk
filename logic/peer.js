@@ -2,17 +2,28 @@
 
 var _ = require('lodash');
 var ip = require('ip');
+var wsRPC = require('../api/ws/rpc/wsRPC').wsRPC;
 
 /**
- * Main peer logic.
+ * Creates a peer.
  * @memberof module:peers
  * @class
  * @classdesc Main peer logic.
+ * @implements {Peer.accept}
  * @param {peer} peer
  * @return calls accept method
  */
 // Constructor
 function Peer (peer) {
+
+	Object.defineProperties(this, {
+		rpc: {
+			get: function () {
+				return wsRPC.getClientRPCStub(this.ip, this.port);
+			}.bind(this)
+		}
+	});
+
 	return this.accept(peer || {});
 }
 
@@ -23,7 +34,6 @@ function Peer (peer) {
  * @property {number} state - Between 0 and 2. (banned = 0, unbanned = 1, active = 2)
  * @property {string} os - Between 1 and 64 chars
  * @property {string} version - Between 5 and 12 chars
- * @property {string} dappid
  * @property {hash} broadhash
  * @property {number} height - Minimum 1
  * @property {Date} clock
@@ -38,24 +48,24 @@ Peer.prototype.properties = [
 	'state',
 	'os',
 	'version',
-	'dappid',
 	'broadhash',
 	'height',
 	'clock',
 	'updated',
-	'nonce'
+	'nonce',
+	'httpPort'
 ];
 
 Peer.prototype.immutable = [
 	'ip',
 	'port',
+	'httpPort',
 	'string'
 ];
 
 Peer.prototype.headers = [
 	'os',
 	'version',
-	'dappid',
 	'broadhash',
 	'height',
 	'nonce'
@@ -64,12 +74,17 @@ Peer.prototype.headers = [
 Peer.prototype.nullable = [
 	'os',
 	'version',
-	'dappid',
 	'broadhash',
 	'height',
 	'clock',
 	'updated'
 ];
+
+Peer.STATE = {
+	BANNED: 0,
+	DISCONNECTED: 1,
+	CONNECTED: 2
+};
 
 // Public methods
 /**
@@ -103,24 +118,15 @@ Peer.prototype.accept = function (peer) {
 /**
  * Normalizes peer data.
  * @param {peer} peer
- * @return {peer} 
+ * @return {peer}
  */
 Peer.prototype.normalize = function (peer) {
-	if (peer.dappid && !Array.isArray(peer.dappid)) {
-		var dappid = peer.dappid;
-		peer.dappid = [];
-		peer.dappid.push(dappid);
-	}
-
 	if (peer.height) {
 		peer.height = this.parseInt(peer.height, 1);
 	}
 
 	peer.port = this.parseInt(peer.port, 0);
-
-	if (!/^[0-2]{1}$/.test(peer.state)) {
-		peer.state = 1;
-	}
+	peer.state = this.parseInt(peer.state, Peer.STATE.DISCONNECTED);
 
 	return peer;
 };
@@ -160,8 +166,8 @@ Peer.prototype.update = function (peer) {
 
 	// Accept only supported properties
 	_.each(this.properties, function (key) {
-		// Change value only when is defined, also prevent release ban when banned peer connect to our node
-		if (peer[key] !== null && peer[key] !== undefined && !(key === 'state' && this.state === 0 && peer.state === 2) && !_.includes(this.immutable, key)) {
+		// Change value only when is defined
+		if (peer[key] !== null && peer[key] !== undefined && !_.includes(this.immutable, key)) {
 			this[key] = peer[key];
 		}
 	}.bind(this));
@@ -185,6 +191,7 @@ Peer.prototype.object = function () {
 		}
 	});
 
+	delete copy.rpc;
 	return copy;
 };
 

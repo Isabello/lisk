@@ -16,7 +16,7 @@ var httpApi = require('../../helpers/httpApi');
  *  - get	/multisignatures
  * 	- get	/unconfirmed/get
  * 	- get	/unconfirmed
- * 	- put	/
+ * 	- post	/
  * @memberof module:transactions
  * @requires helpers/Router
  * @requires helpers/httpApi
@@ -25,9 +25,14 @@ var httpApi = require('../../helpers/httpApi');
  * @param {scope} app - Network app.
  */
 // Constructor
-function TransactionsHttpApi (transactionsModule, app) {
+function TransactionsHttpApi (transactionsModule, app, logger, cache) {
 
 	var router = new Router();
+
+	// attach a middlware to endpoints
+	router.attachMiddlwareForUrls(httpApi.middleware.useCache.bind(null, logger, cache), [
+		'get /'
+	]);
 
 	router.map(transactionsModule.shared, {
 		'get /': 'getTransactions',
@@ -39,7 +44,7 @@ function TransactionsHttpApi (transactionsModule, app) {
 		'get /multisignatures': 'getMultisignatureTransactions',
 		'get /unconfirmed/get': 'getUnconfirmedTransaction',
 		'get /unconfirmed': 'getUnconfirmedTransactions',
-		'put /': 'addTransactions'
+		'post /': 'postTransactions'
 	});
 
 	httpApi.registerEndpoint('/api/transactions', app, router, transactionsModule.isLoaded);

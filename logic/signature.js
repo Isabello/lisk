@@ -7,36 +7,29 @@ var constants = require('../helpers/constants.js');
 var modules, library;
 
 /**
- * Main signature logic.
+ * Initializes library.
  * @memberof module:signatures
  * @class
  * @classdesc Main signature logic.
+ * @param {ZSchema} schema
+ * @param {Object} logger
  */
 // Constructor
-function Signature () {}
-
-/**
- * @param {scope} scope - App instance.
- */
-Signature.prototype.bind = function (scope) {
-	modules = scope.modules;
-	library = scope.library;
-};
-
-/**
- * Creates a signature and sets related data.
- * @param {Object} data - Uses secondKeypair publicKey.
- * @param {transaction} trs - Transaction to add signature data to asset.
- * @returns {transaction} trs with new data
- */
-Signature.prototype.create = function (data, trs) {
-	trs.recipientId = null;
-	trs.amount = 0;
-	trs.asset.signature = {
-		publicKey: data.secondKeypair.publicKey.toString('hex')
+function Signature (schema, logger) {
+	library ={
+		schema: schema,
+		logger: logger,
 	};
+}
 
-	return trs;
+/**
+ * Binds input parameters to private variable modules
+ * @param {Accounts} accounts
+ */
+Signature.prototype.bind = function (accounts) {
+	modules = {
+		accounts: accounts,
+	};
 };
 
 /**

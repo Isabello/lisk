@@ -2,31 +2,45 @@
 
 var _ = require('lodash');
 var async = require('async');
+var failureCodes = require('../api/ws/rpc/failureCodes.js');
 var Peer = require('../logic/peer.js');
 var schema = require('../schema/peers.js');
+var System = require('../modules/system.js');
+var peersManager = require('../helpers/peersManager.js');
 
 // Private fields
 var __private = {};
 var self;
-var modules;
 var library;
+var modules;
 
 /**
- * Main peers logic.
+ * Initializes library.
  * @memberof module:peers
  * @class
  * @classdesc Main peers logic.
- * @param {scope} scope - App instance.
+ * @param {Object} logger
  * @param {function} cb - Callback function.
  * @return {setImmediateCallback} Callback function with `this` as data.
  */
 // Constructor
-function Peers (scope, cb) {
-	library = scope;
+function Peers (logger, cb) {
+	library = {
+		logger: logger
+	};
 	self = this;
-	__private.peers = {};
+	__private.me = null;
+
+	this.peersManager = peersManager;
+
 	return setImmediate(cb, null, this);
 }
+
+Peers.prototype.me = function () {
+	var me = _.extend(System.getHeaders(), {state: Peer.STATE.CONNECTED});
+	delete me.ip;
+	return me;
+};
 
 /**
  * Returns a peer instance.
@@ -48,7 +62,7 @@ Peers.prototype.create = function (peer) {
  */
 Peers.prototype.exists = function (peer) {
 	peer = self.create(peer);
-	return !!__private.peers[peer.string];
+	return !!self.peersManager.getByAddress(peer.string);
 };
 
 /**
@@ -58,10 +72,10 @@ Peers.prototype.exists = function (peer) {
  */
 Peers.prototype.get = function (peer) {
 	if (typeof peer === 'string') {
-		return __private.peers[peer];
+		return self.peersManager.getByAddress(peer);
 	} else {
 		peer = self.create(peer);
-		return __private.peers[peer.string];
+		return self.peersManager.getByAddress(peer.string);
 	}
 };
 
@@ -69,16 +83,13 @@ Peers.prototype.get = function (peer) {
  * Inserts or updates a peer
  * @param {peer} peer
  * @param {boolean} insertOnly - true to only insert.
- * @return {boolean} True if operation is success.
+ * @return {boolean|number} True if operation is success, error code in other case
  */
 Peers.prototype.upsert = function (peer, insertOnly) {
 	// Insert new peer
 	var insert = function (peer) {
 		peer.updated = Date.now();
-		__private.peers[peer.string] = peer;
-
-		library.logger.debug('Inserted new peer', peer.string);
-		library.logger.trace('Inserted new peer', {peer: peer});
+		return self.peersManager.add(peer);
 	};
 
 	// Update existing peer
@@ -87,12 +98,12 @@ Peers.prototype.upsert = function (peer, insertOnly) {
 
 		var diff = {};
 		_.each(peer, function (value, key) {
-			if (key !== 'updated' && __private.peers[peer.string][key] !== value) {
+			if (key !== 'updated' && self.peersManager.getByAddress(peer.string)[key] !== value) {
 				diff[key] = value;
 			}
 		});
 
-		__private.peers[peer.string].update(peer);
+		self.peersManager.getByAddress(peer.string).update(peer);
 
 		if (Object.keys(diff).length) {
 			library.logger.debug('Updated peer ' + peer.string, diff);
@@ -102,10 +113,11 @@ Peers.prototype.upsert = function (peer, insertOnly) {
 	};
 
 	peer = self.create(peer);
-	
+	peer.string = peer.string || self.peersManager.getAddress(peer.nonce);
+
 	if (!peer.string) {
-		library.logger.warn('Upsert invalid peer rejected', {peer: peer});
-		return false;
+		library.logger.trace('Upsert invalid peer rejected', {peer: peer});
+		return failureCodes.ON_MASTER.UPDATE.INVALID_PEER;
 	}
 
 	// Performing insert or update
@@ -114,10 +126,19 @@ Peers.prototype.upsert = function (peer, insertOnly) {
 		if (!insertOnly) {
 			update(peer);
 		} else {
-			return false;
+			return failureCodes.ON_MASTER.INSERT.INSERT_ONLY_FAILURE;
 		}
 	} else {
-		insert(peer);
+		if (_.isEmpty(modules.peers.acceptable([peer]))) {
+			library.logger.debug('Rejecting unacceptable peer', peer.string);
+			return failureCodes.ON_MASTER.INSERT.NOT_ACCEPTED;
+		}
+		if (insert(peer)) {
+			library.logger.debug('Inserted new peer', peer.string);
+		} else {
+			library.logger.debug('Cannot insert peer (nonce exists / empty address field)', peer.string);
+			return failureCodes.ON_MASTER.INSERT.NONCE_EXISTS;
+		}
 	}
 
 	// Stats for tracking changes
@@ -128,7 +149,7 @@ Peers.prototype.upsert = function (peer, insertOnly) {
 
 	_.each(__private.peers, function (peer, index) {
 		++cnt_total;
-		if (peer.state === 2) {
+		if (peer.state === Peer.STATE.CONNECTED) {
 			++cnt_active;
 		}
 		if (!peer.height) {
@@ -145,58 +166,21 @@ Peers.prototype.upsert = function (peer, insertOnly) {
 };
 
 /**
- * Upserts peer with banned state `0` and clock with current time + seconds.
- * @param {string} pip - Peer ip
- * @param {number} port
- * @param {number} seconds
- * @return {function} Calls upsert
- */
-Peers.prototype.ban = function (ip, port, seconds) {
-	return self.upsert({
-		ip: ip,
-		port: port,
-		// State 0 for banned peer
-		state: 0,
-		clock: Date.now() + (seconds || 1) * 1000
-	});
-};
-
-/**
- * Upserts peer with unbanned state `1` and deletes clock.
- * @param {string} pip - Peer ip
- * @param {number} port
- * @param {number} seconds
- * @return {peer}
- */
-Peers.prototype.unban = function (peer) {
-	peer = self.get(peer);
-	if (peer) {
-		delete peer.clock;
-		peer.state = 1;
-		library.logger.debug('Released ban for peer', peer.string);
-	} else {
-		library.logger.debug('Failed to release ban for peer', {err: 'INVALID', peer: peer});
-	}
-	return peer;
-};
-
-/**
  * Deletes peer from peers list.
  * @param {peer} peer
- * @return {boolean} True if peer exists
+ * @return {boolean|number} True if peer exists, error code in other case
  */
 Peers.prototype.remove = function (peer) {
 	peer = self.create(peer);
 	// Remove peer if exists
 	if (self.exists(peer)) {
 		library.logger.info('Removed peer', peer.string);
-		library.logger.debug('Removed peer', {peer: __private.peers[peer.string]});
-		__private.peers[peer.string] = null; // Possible memory leak prevention
-		delete __private.peers[peer.string];
+		library.logger.debug('Removed peer', {peer: peer});
+		self.peersManager.remove(peer);
 		return true;
 	} else {
 		library.logger.debug('Failed to remove peer', {err: 'AREMOVED', peer: peer});
-		return false;
+		return failureCodes.ON_MASTER.REMOVE.NOT_ON_LIST;
 	}
 };
 
@@ -207,19 +191,21 @@ Peers.prototype.remove = function (peer) {
  */
 Peers.prototype.list = function (normalize) {
 	if (normalize) {
-		return Object.keys(__private.peers).map(function (key) { return __private.peers[key].object(); });
+		return Object.keys(self.peersManager.addressToNonceMap).map(function (key) { return self.peersManager.getByAddress(key).object(); });
 	} else {
-		return Object.keys(__private.peers).map(function (key) { return __private.peers[key]; });
+		return Object.keys(self.peersManager.addressToNonceMap).map(function (key) { return self.create(self.peersManager.getByAddress(key)); });
 	}
 };
 
 // Public methods
 /**
- * @param {scope} scope - App instance.
+ * Modules are not required in this file.
+ * @param {Object} __modules - Peers module.
  */
-Peers.prototype.bind = function (scope) {
-	modules = scope.modules;
-	library.logger.trace('Logic/Peers->bind');
+Peers.prototype.bindModules = function (__modules) {
+	modules = {
+		peers: __modules.peers
+	};
 };
 
 // Export

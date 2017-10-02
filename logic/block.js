@@ -8,21 +8,27 @@ var BlockReward = require('../logic/blockReward.js');
 var constants = require('../helpers/constants.js');
 
 // Private fields
-var __private = {}, genesisblock = null;
+var __private = {};
 
 /**
  * Main Block logic.
  * @memberof module:blocks
  * @class
  * @classdesc Main Block logic.
- * @param {scope} scope - App instance.
+ * @param {Object} ed
+ * @param {ZSchema} schema
+ * @param {Transaction} transaction
  * @param {function} cb - Callback function.
  * @return {setImmediateCallback} With `this` as data.
  */
 // Constructor
-function Block (scope, cb) {
-	this.scope = scope;
-	genesisblock = this.scope.genesisblock;
+function Block (ed, schema, transaction, cb) {
+	this.scope = {
+		ed: ed,
+		schema: schema,
+		transaction: transaction,
+	};
+	__private.blockReward = new BlockReward();
 	if (cb) {
 		return setImmediate(cb, null, this);
 	}
@@ -33,7 +39,6 @@ function Block (scope, cb) {
  * Creates a blockReward instance.
  * @private
  */
-__private.blockReward = new BlockReward();
 
 /**
  * Gets address by public
@@ -138,7 +143,7 @@ Block.prototype.create = function (data) {
 Block.prototype.sign = function (block, keypair) {
 	var hash = this.getHash(block);
 
-	return this.scope.ed.sign(hash, keypair).toString('hex');
+	return this.scope.ed.sign(hash, keypair.privateKey).toString('hex');
 };
 
 /**

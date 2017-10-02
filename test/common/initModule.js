@@ -6,31 +6,66 @@ var randomString = require('randomstring');
 
 var _ = require('lodash');
 
-var async = require('../node').async;
+var async = require('async');
 var dirname = path.join(__dirname, '..', '..');
 var config = require(path.join(dirname, '/config.json'));
+var Sequence = require(path.join(dirname, '/helpers', 'sequence.js'));
 var database = require(path.join(dirname, '/helpers', 'database.js'));
 var genesisblock = require(path.join(dirname, '/genesisBlock.json'));
 var Logger = require(dirname + '/logger.js');
 var z_schema = require('../../helpers/z_schema.js');
+var cacheHelper = require('../../helpers/cache.js');
+var Cache = require('../../modules/cache.js');
+var ed = require('../../helpers/ed');
+var jobsQueue = require('../../helpers/jobsQueue');
+var Transaction = require('../../logic/transaction.js');
+var Account = require('../../logic/account.js');
 
 var modulesLoader = new function () {
 
 	this.db = null;
 	this.logger = new Logger({ echo: null, errorLevel: config.fileLogLevel, filename: config.logFileName });
+	config.nonce = randomString.generate(16);
 	this.scope = {
 		config: config,
 		genesisblock: { block: genesisblock },
 		logger: this.logger,
 		network: {
-			app: express()
+			app: express(),
+			io: {
+				sockets: express()
+			}
 		},
-		public: '../../public',
 		schema: new z_schema(),
+		ed: ed,
 		bus: {
-			message: function () {}
+			argsMessages: [],
+			message: function () {
+				Array.prototype.push.apply(this.argsMessages, arguments);
+			},
+			getMessages: function () {
+				return this.argsMessages;
+			},
+			clearMessages: function () {
+				this.argsMessages = [];
+			}
 		},
-		nonce: randomString.generate(16)
+		nonce: randomString.generate(16),
+		dbSequence: new Sequence({
+			onWarning: function (current, limit) {
+				this.logger.warn('DB queue', current);
+			}
+		}),
+		sequence: new Sequence({
+			onWarning: function (current, limit) {
+				this.logger.warn('Main queue', current);
+			}
+		}),
+		balancesSequence: new Sequence({
+			onWarning: function (current, limit) {
+				this.logger.warn('Balance queue', current);
+			}
+		})
 	};
 
 	/**
@@ -41,7 +76,38 @@ var modulesLoader = new function () {
 	 * @param {Function} cb
 	 */
 	this.initLogic = function (Logic, scope, cb) {
-		new Logic(scope, cb);
+		jobsQueue.jobs = {};
+		switch (Logic.name) {
+			case 'Account':
+				new Logic(scope.db, scope.schema, scope.logger, cb);
+				break;
+			case 'Transaction':
+				async.series({
+					account: function (cb) {
+						new Account(scope.db, scope.schema, scope.logger, cb);
+					}
+				}, function (err, result) {
+					new Logic(scope.db, scope.ed, scope.schema, scope.genesisblock, result.account, scope.logger, cb);
+				});
+				break;
+			case 'Block':
+				async.waterfall([
+					function (waterCb) {
+						return new Account(scope.db, scope.schema, scope.logger, waterCb);
+					},
+					function (account, waterCb) {
+						return new Transaction(scope.db, scope.ed, scope.schema, scope.genesisblock, account, scope.logger, waterCb);
+					}
+				], function (err, transaction) {
+					new Logic(scope.ed, scope.schema, transaction, cb);
+				});
+				break;
+			case 'Peers':
+				new Logic(scope.logger, cb);
+				break;
+			default:
+				console.log('no Logic case initLogic');
+		}
 	};
 
 	/**
@@ -52,6 +118,7 @@ var modulesLoader = new function () {
 	 * @param {Function} cb
 	 */
 	this.initModule = function (Module, scope, cb) {
+		jobsQueue.jobs = {};
 		return new Module(cb, scope);
 	};
 
@@ -87,7 +154,19 @@ var modulesLoader = new function () {
 						return mapCb(err, memo);
 					}.bind(this));
 				}.bind(this), waterCb);
-			}.bind(this)
+			}.bind(this),
+
+			function (modules, waterCb) {
+				_.each(scope.logic, function (logic) {
+					if (typeof logic.bind === 'function') {
+						logic.bind({modules: modules});
+					}
+					if (typeof logic.bindModules === 'function') {
+						logic.bindModules(modules);
+					}
+				});
+				waterCb(null, modules);
+			}
 		], cb);
 	};
 
@@ -101,15 +180,11 @@ var modulesLoader = new function () {
 		this.initModules([
 			{accounts: require('../../modules/accounts')},
 			{blocks: require('../../modules/blocks')},
-			{crypto: require('../../modules/crypto')},
 			{delegates: require('../../modules/delegates')},
 			{loader: require('../../modules/loader')},
 			{multisignatures: require('../../modules/multisignatures')},
 			{peers: require('../../modules/peers')},
-			{rounds: require('../../modules/rounds')},
-			{server: require('../../modules/server')},
 			{signatures: require('../../modules/signatures')},
-			{sql: require('../../modules/sql')},
 			{system: require('../../modules/system')},
 			{transactions: require('../../modules/transactions')},
 			{transport: require('../../modules/transport')}
@@ -170,12 +245,29 @@ var modulesLoader = new function () {
 		if (this.db) {
 			return cb(null, this.db);
 		}
-		database.connect(config.db, this.logger, function (err, db) {
+		database.connect(this.scope.config.db, this.logger, function (err, db) {
 			if (err) {
 				return cb(err);
 			}
 			this.db = db;
 			cb(null, this.db);
+		}.bind(this));
+	};
+
+	/**
+	 * Initializes Cache module
+	 * @param {Function} cb
+	 */
+	this.initCache = function (cb) {
+		var cacheEnabled, cacheConfig;
+		cacheEnabled = this.scope.config.cacheEnabled;
+		cacheConfig = this.scope.config.redis;
+		cacheHelper.connect(cacheEnabled, cacheConfig, this.logger, function (err, __cache) {
+			if (err) {
+				cb(err, __cache);
+			} else {
+				this.initModule(Cache, _.merge(this.scope, {cache: __cache}), cb);
+			}
 		}.bind(this));
 	};
 };

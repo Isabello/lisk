@@ -5,6 +5,7 @@ var ByteBuffer = require('bytebuffer');
 var constants = require('../helpers/constants.js');
 var Diff = require('../helpers/diff.js');
 var exceptions = require('../helpers/exceptions.js');
+var slots = require('../helpers/slots.js');
 
 // Private fields
 var modules, library, __private = {};
@@ -12,39 +13,36 @@ var modules, library, __private = {};
 __private.unconfirmedSignatures = {};
 
 /**
- * Main multisignature logic.
+ * Initializes library.
  * @memberof module:multisignatures
  * @class
  * @classdesc Main multisignature logic.
+ * @param {ZSchema} schema
+ * @param {Object} network
+ * @param {Transaction} transaction
+ * @param {Object} logger
  */
 // Constructor
-function Multisignature () {}
+function Multisignature (schema, network, transaction, logger) {
+	library = {
+		schema: schema,
+		network: network,
+		logger: logger,
+		logic: {
+			transaction: transaction,
+		},
+	};
+}
 
 // Public methods
 /**
- * @param {scope} scope - App instance.
+ * Binds input parameters to private variable modules
+ * @param {Accounts} accounts
  */
-Multisignature.prototype.bind = function (scope) {
-	modules = scope.modules;
-	library = scope.library;
-};
-
-/**
- * Creates a multisignature.
- * @param {multisignature} data - Entry information: min, keysgroup, lifetime.
- * @param {transaction} trs - Transaction to add multisignature data.
- * @returns {transaction} trs with new data
- */
-Multisignature.prototype.create = function (data, trs) {
-	trs.recipientId = null;
-	trs.amount = 0;
-	trs.asset.multisignature = {
-		min: data.min,
-		keysgroup: data.keysgroup,
-		lifetime: data.lifetime
+Multisignature.prototype.bind = function (accounts) {
+	modules = {
+		accounts: accounts
 	};
-
-	return trs;
 };
 
 /**
@@ -61,10 +59,10 @@ Multisignature.prototype.calculateFee = function (trs, sender) {
 /**
  * Verifies multisignature fields from transaction asset and sender.
  * @implements module:transactions#Transaction~verifySignature
- * @param {transaction} trs 
+ * @param {transaction} trs
  * @param {account} sender
  * @param {function} cb - Callback function.
- * @returns {setImmediateCallback|transaction} returns error string if invalid parameter | 
+ * @returns {setImmediateCallback|transaction} returns error string if invalid parameter |
  * trs validated.
  */
 Multisignature.prototype.verify = function (trs, sender, cb) {
@@ -80,12 +78,13 @@ Multisignature.prototype.verify = function (trs, sender, cb) {
 		return setImmediate(cb, 'Invalid multisignature keysgroup. Must not be empty');
 	}
 
-	if (trs.asset.multisignature.min <= 1 || trs.asset.multisignature.min > 16) {
-		return setImmediate(cb, 'Invalid multisignature min. Must be between 1 and 16');
+	if (trs.asset.multisignature.min < constants.multisigConstraints.min.minimum || trs.asset.multisignature.min > constants.multisigConstraints.min.maximum) {
+		return setImmediate(cb, ['Invalid multisignature min. Must be between', constants.multisigConstraints.min.minimum,
+			'and', constants.multisigConstraints.min.maximum].join(' '));
 	}
 
 	if (trs.asset.multisignature.min > trs.asset.multisignature.keysgroup.length) {
-		var err = 'Invalid multisignature min. Must be less than keysgroup size';
+		var err = 'Invalid multisignature min. Must be less than or equal to keysgroup size';
 
 		if (exceptions.multisignatures.indexOf(trs.id) > -1) {
 			this.scope.logger.debug(err);
@@ -95,8 +94,10 @@ Multisignature.prototype.verify = function (trs, sender, cb) {
 		}
 	}
 
-	if (trs.asset.multisignature.lifetime < 1 || trs.asset.multisignature.lifetime > 72) {
-		return setImmediate(cb, 'Invalid multisignature lifetime. Must be between 1 and 72');
+	if (trs.asset.multisignature.lifetime < constants.multisigConstraints.lifetime.minimum  ||
+		trs.asset.multisignature.lifetime > constants.multisigConstraints.lifetime.maximum) {
+		return setImmediate(cb, ['Invalid multisignature lifetime. Must be between', constants.multisigConstraints.lifetime.minimum, 'and',
+			constants.multisigConstraints.lifetime.maximum].join(' '));
 	}
 
 	if (Array.isArray(sender.multisignatures) && sender.multisignatures.length) {
@@ -133,6 +134,10 @@ Multisignature.prototype.verify = function (trs, sender, cb) {
 	}
 
 	async.eachSeries(trs.asset.multisignature.keysgroup, function (key, cb) {
+		if (!key || typeof key !== 'string') {
+			return setImmediate(cb, 'Invalid member in keysgroup');
+		}
+
 		var math = key[0];
 		var publicKey = key.slice(1);
 
@@ -221,7 +226,7 @@ Multisignature.prototype.apply = function (trs, block, sender, cb) {
 		multimin: trs.asset.multisignature.min,
 		multilifetime: trs.asset.multisignature.lifetime,
 		blockId: block.id,
-		round: modules.rounds.calc(block.height)
+		round: slots.calcRound(block.height)
 	}, function (err) {
 		if (err) {
 			return setImmediate(cb, err);
@@ -262,7 +267,7 @@ Multisignature.prototype.undo = function (trs, block, sender, cb) {
 		multimin: -trs.asset.multisignature.min,
 		multilifetime: -trs.asset.multisignature.lifetime,
 		blockId: block.id,
-		round: modules.rounds.calc(block.height)
+		round: slots.calcRound(block.height)
 	}, function (err) {
 		return setImmediate(cb, err);
 	});
@@ -296,7 +301,7 @@ Multisignature.prototype.applyUnconfirmed = function (trs, sender, cb) {
  * Turns off unconfirmedSignatures for sender address.
  * Inverts multisignature signs and merges into sender address
  * to unconfirmed fields.
- * 
+ *
  * @param {transaction} trs - Uses multisignature from asset.
  * @param {account} sender
  * @param {function} cb - Callback function.
@@ -328,18 +333,18 @@ Multisignature.prototype.schema = {
 	properties: {
 		min: {
 			type: 'integer',
-			minimum: 1,
-			maximum: 15
+			minimum: constants.multisigConstraints.min.minimum,
+			maximum: constants.multisigConstraints.min.maximum
 		},
 		keysgroup: {
 			type: 'array',
-			minLength: 1,
-			maxLength: 16
+			minItems: constants.multisigConstraints.keysgroup.minItems,
+			maxItems: constants.multisigConstraints.keysgroup.maxItems
 		},
 		lifetime: {
 			type: 'integer',
-			minimum: 1,
-			maximum: 72
+			minimum: constants.multisigConstraints.lifetime.minimum,
+			maximum: constants.multisigConstraints.lifetime.maximum
 		}
 	},
 	required: ['min', 'keysgroup', 'lifetime']
